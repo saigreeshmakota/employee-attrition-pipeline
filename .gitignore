@@ -1,0 +1,25 @@
+
+# Python environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+
+# Dataset files
+data/raw/*.csv
+data/processed/*.csv
+
+# OS files
+.DS_Store
+
+# Editor files
+.vscode/
