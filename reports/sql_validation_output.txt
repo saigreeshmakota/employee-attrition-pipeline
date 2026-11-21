@@ -1,0 +1,24 @@
+test_case	actual_result
+SQL001 - Total Records	1470
+test_case	actual_result
+SQL002 - Duplicate IDs	0
+test_case	actual_result
+SQL003 - Missing IDs	0
+test_case	actual_result
+SQL004 - Invalid Ages	0
+test_case	actual_result
+SQL005 - Invalid Income	0
+test_case	actual_result
+SQL006 - Invalid Attrition	0
+test_case	actual_result
+SQL007 - Missing Departments	0
+test_case	actual_result
+SQL008 - Missing Job Roles	0
+test_case	actual_result
+SQL009 - Invalid Company Years	0
+test_case	actual_result
+SQL010 - Invalid Working Years	0
+test_case	actual_result
+SQL011 - Missing Tenure Groups	0
+test_case	actual_result
+SQL012 - Missing Experience Groups	0

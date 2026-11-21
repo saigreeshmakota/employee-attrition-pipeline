@@ -1,0 +1,8 @@
+
+COLUMN-LEVEL RECONCILIATION
+--------------------------------
+Source records: 1470
+Target records: 1470
+Columns compared: 34
+Mismatched values: 0
+Column Reconciliation: PASS
