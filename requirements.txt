@@ -1,0 +1,12 @@
+pandas
+numpy
+sqlalchemy
+pymysql
+python-dotenv
+fastapi
+uvicorn
+streamlit
+plotly
+pytest
+pytest-html
+httpx
