@@ -10,4 +10,4 @@ COPY backend ./backend
 COPY sql ./sql
 COPY reports ./reports
 
-CMD ["python", "-m", "backend.modeling.train_attrition"]
+CMD ["python", "-m", "backend.run_pipeline"]
