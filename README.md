@@ -1,151 +1,133 @@
-# Employee Attrition Analytics – End-to-End Data Quality & Testing Framework
+# Employee Attrition Analytics & Prediction Pipeline
 
-## Project Overview
+An end-to-end workforce analytics project that ingests employee data, validates data quality, transforms workforce features, loads records into MySQL, and trains baseline machine-learning models to identify employees at risk of attrition.
 
-An end-to-end data engineering and quality assurance project designed to process, validate, test, and analyze employee attrition data.
+This project demonstrates Python, Pandas, SQL, ETL engineering, data validation, scikit-learn, FastAPI, Streamlit, automated testing and reproducible development practices.
 
-The project demonstrates how data quality can be maintained across an ETL pipeline, MySQL database, REST API, and analytics dashboard using automated testing and reconciliation techniques.
+## Business use case
 
-## Business Problem
+HR and workforce analytics teams need reliable employee data to understand attrition patterns and identify factors associated with employees leaving an organization. This project builds a repeatable data pipeline and baseline classification models. Model predictions are decision-support signals only; they should not be used as the sole basis for employment decisions.
 
-Organizations need reliable employee data to understand workforce attrition. Inconsistent records, missing values, duplicate employee IDs, and incorrect transformations can lead to inaccurate business reports.
+## Dataset and schema
 
-This project addresses these challenges by implementing data validation, database testing, source-to-target reconciliation, API testing, and dashboard verification.
+The project is designed for the IBM HR Analytics Employee Attrition & Performance dataset, commonly distributed through Kaggle. The raw dataset is not committed to this repository. Obtain the dataset from its original distribution and place the CSV at:
 
-## Project Objectives
+`data/raw/WA_Fn-UseC_-HR-Employee-Attrition.csv`
 
-- Build an end-to-end ETL pipeline using Python and Pandas.
-- Validate data quality and business rules.
-- Store transformed employee records in MySQL.
-- Perform SQL-based data quality testing.
-- Implement source-to-target reconciliation.
-- Develop REST APIs using FastAPI.
-- Build an interactive analytics dashboard using Streamlit.
-- Automate testing using Pytest.
-- Generate HTML test execution reports.
-## System Architecture
+If your downloaded file has a suffix such as `(1)` or ` 2`, rename it to the exact filename above or update the configured path in `backend/transformation/clean_data.py`.
 
-The project follows an end-to-end data processing and quality assurance workflow.
+Important fields include:
+
+| Field | Meaning |
+|---|---|
+| EmployeeNumber | Employee identifier |
+| Age | Employee age |
+| Attrition | Whether the employee left (Yes/No); prediction target |
+| Department | Employee department |
+| JobRole | Employee job role |
+| MonthlyIncome | Monthly income |
+| TotalWorkingYears | Total career experience |
+| YearsAtCompany | Tenure at the organization |
+| YearsInCurrentRole | Time in current role |
+| OverTime | Whether overtime is recorded |
+
+The source data contains personal/workforce attributes. Treat it as sample research data, keep it local where possible, and do not upload real employee data to public services.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    A[Raw HR CSV] --> B[Ingestion and Profiling]
+    B --> C[Cleaning]
+    C --> D[Feature Transformation]
+    D --> E[Pandera Schema and Business Validation]
+    E --> F[MySQL Employee Table]
+    F --> G[FastAPI Read API]
+    F --> H[Streamlit Analytics Dashboard]
+    D --> I[Model Training]
+    I --> J[Logistic Regression]
+    I --> K[Random Forest Baseline]
+    J --> L[Precision, Recall, F1 and ROC AUC]
+    K --> L
+    L --> M[JSON Metrics Report]
+```
+
+## Pipeline stages
+
+1. **Ingestion and profiling:** inspect dimensions, columns, data types, missing values, duplicates and business-rule anomalies.
+2. **Cleaning:** remove duplicate rows and constant columns.
+3. **Transformation:** standardize categorical values and create `TenureGroup` and `ExperienceGroup`.
+4. **Validation:** check required fields, types, nulls, uniqueness, value ranges and workforce business rules. A reusable Pandera schema is in `backend/validation/schema.py`.
+5. **Loading:** load transformed records into MySQL and compare source and target row counts.
+6. **Analytics:** expose employee data through FastAPI and visualize workforce metrics in Streamlit.
+7. **Prediction:** train Logistic Regression and Random Forest baselines using a stratified train/test split.
+
+## Machine-learning evaluation
+
+The target is `Attrition`, mapped to `Yes = 1` and `No = 0`. The training script reports metrics for the positive/leaver class, not just overall accuracy:
+
+- Precision for Attrition=Yes
+- Recall for Attrition=Yes
+- F1-score for Attrition=Yes
+- ROC AUC
+- Confusion matrix
+
+The training pipeline uses a preprocessing pipeline for missing-value imputation, numeric scaling and categorical one-hot encoding. The split is stratified and uses a fixed random seed for reproducibility. Class weighting is enabled for the baseline classifiers to address class imbalance.
+
+**No model scores are claimed in this README.** Generate the actual metrics using the command below; results are written to `reports/models/baseline_metrics.json`. Use those measured values when describing model performance in interviews.
+
+## Repository structure
 
 ```text
-Raw Employee Dataset (CSV)
-          |
-          v
-   Data Ingestion
-          |
-          v
- Data Profiling & Validation
-          |
-          v
- Data Cleaning & Transformation
-          |
-          v
-   Transformed Dataset
-          |
-          v
-      MySQL Database
-          |
-     +----+-----+
-     |          |
-     v          v
-  FastAPI    Streamlit
-     |       Dashboard
-     v
- API Testing
-     |
-     v
-  Pytest Automation
-     |
-     v
- HTML Test Reports
- ## Quality Assurance & Testing
+employee-attrition-pipeline/
+├── backend/
+│   ├── api/                  # FastAPI endpoints
+│   ├── database/             # SQLAlchemy MySQL connection
+│   ├── ingestion/            # Data profiling and MySQL loading
+│   ├── transformation/       # Cleaning and feature engineering
+│   ├── validation/           # Data quality and Pandera schema
+│   ├── modeling/             # Attrition baseline models
+│   └── run_pipeline.py       # End-to-end pipeline entry point
+├── data/                     # Local raw and processed data (not committed)
+├── docs/                     # QA plans and reconciliation documentation
+├── frontend/dashboard/       # Streamlit dashboard
+├── reports/                  # QA evidence and generated model metrics
+├── sql/                      # Validation SQL and read-only account script
+├── tests/                    # Automated tests
+├── Dockerfile
+├── docker-compose.yml
+└── requirements.txt
+```
 
-The project uses a combination of automated and database-level testing techniques.
+## Local setup
 
-### 1. Data Quality Testing
-- Missing value validation
-- Duplicate record detection
-- Employee ID uniqueness
-- Age and income validation
-- Business rule validation
-- Data type checks
-
-### 2. ETL Testing
-- Source and target record count validation
-- Transformation validation
-- Derived column verification
-- Employee ID reconciliation
-- Data consistency checks
-
-### 3. SQL Testing
-- Database record count validation
-- Duplicate employee ID checks
-- Null value checks
-- Invalid business value checks
-- Department and job role validation
-
-### 4. API Testing
-- Endpoint response validation
-- Database failure handling
-- API data quality validation
-- API record limit validation
-- API-to-MySQL reconciliation
-- Field-level data comparison
-
-### 5. Dashboard Testing
-- KPI validation
-- Department-wise attrition validation
-- Gender-wise attrition validation
-- Filter functionality testing
-- Dashboard-to-SQL result comparison
-
-## Test Execution Results
-
-| Testing Area | Result |
-|---|---|
-| Complete automated test suite | 22 Passed |
-| Failed tests | 0 |
-| Warnings | 1 |
-| API automated tests | 7 Passed |
-
-### Test Reports
-
-- API Report: `reports/api_test_report.html`
-- Complete QA Report: `reports/full_qa_test_report.html`
-- SQL Validation Evidence: `reports/sql_validation_output.txt`
-- Reconciliation Evidence: `reports/reconciliation/`
-## Installation & Setup
-
-### Prerequisites
-
-- Python 3.14+
-- MySQL Server
-- Git
-- VS Code
-
-### 1. Clone the Repository
+### 1. Clone and create a virtual environment
 
 ```bash
 git clone https://github.com/saigreeshmakota/employee-attrition-pipeline.git
 cd employee-attrition-pipeline
-```
-
-### 2. Create a Virtual Environment
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
+Python 3.11 or later is recommended for the current dependency set.
 
-Create a `.env` file in the project root:
+### 2. Add the dataset
+
+Create the local data directories if needed:
+
+```bash
+mkdir -p data/raw data/processed
+```
+
+Place the downloaded CSV at the path described in the Dataset section. Dataset files are ignored by Git and should not be committed.
+
+### 3. Configure MySQL
+
+Create a local `.env` file using `.env.example` as a reference. Configure your own MySQL host, port, username, password and database. Ensure the target database exists before running the MySQL load stage.
+
+Example:
 
 ```env
 DB_USER=your_mysql_username
@@ -155,34 +137,101 @@ DB_PORT=3306
 DB_NAME=employee_attrition_db
 ```
 
-Use your own MySQL credentials. Never commit `.env` to GitHub.
+Never commit `.env` or credentials.
 
-### 5. Run the API
+### 4. Run the full pipeline
+
+From the repository root:
+
+```bash
+python -m backend.run_pipeline
+```
+
+The pipeline runs profiling, cleaning, transformation, validation, MySQL loading and baseline model training in order. It stops if a stage fails.
+
+If you want to run individual stages:
+
+```bash
+python -m backend.ingestion.load_data
+python -m backend.transformation.clean_data
+python -m backend.transformation.transform_data
+python -m backend.validation.validate_data
+python -m backend.ingestion.load_to_mysql
+python -m backend.modeling.train_attrition
+```
+
+The MySQL loading step intentionally stops if the target table already contains rows, to avoid accidental duplicate inserts. For a fresh experiment, use a separate test database or deliberately reset the table after backing up any data you need.
+
+## Run the API and dashboard
+
+Start the API:
 
 ```bash
 python -m uvicorn backend.api.main:app --reload
 ```
 
-Open the API documentation:
+API documentation: http://127.0.0.1:8000/docs
 
-http://127.0.0.1:8000/docs
-
-### 6. Run the Dashboard
-
-Open a separate terminal:
+Start the dashboard in another terminal:
 
 ```bash
 python -m streamlit run frontend/dashboard/app.py
 ```
 
-### 7. Run Automated Tests
+The API and dashboard require a populated MySQL database.
+
+## Docker Compose
+
+Copy `.env.example` to `.env` and set strong local passwords. Start MySQL:
 
 ```bash
-python -m pytest -v
+docker compose up -d mysql
 ```
 
-### 8. Generate the HTML Test Report
+The pipeline image expects the raw CSV in `data/raw/`. Run the pipeline service after MySQL is healthy:
 
 ```bash
-python -m pytest -v --html=reports/full_qa_test_report.html --self-contained-html
+docker compose --profile pipeline run --rm pipeline
 ```
+
+Compose maps MySQL to host port 3307 to avoid colliding with a local MySQL service on 3306. The container connects to MySQL using the internal service hostname.
+
+## Read-only SQL account for the Knowledge Copilot
+
+A least-privilege account script is provided at `sql/create_copilot_readonly_user.sql`. Review and edit the database name, password and allowed host before executing it as a MySQL administrator.
+
+The intended account has SELECT access only to the employee table. Use this separate account for the future Copilot SQL agent; never give an LLM agent the application's write credentials or MySQL root credentials. Enforce SELECT-only SQL validation in the Copilot application as a second layer of protection.
+
+## Tests and CI
+
+Run the deterministic schema and modeling unit tests:
+
+```bash
+pytest -q tests/test_portfolio_quality.py
+```
+
+Run Ruff:
+
+```bash
+ruff check backend tests --select E4,E7,E9
+```
+
+GitHub Actions runs these focused checks on every push and pull request. The older integration tests in `tests/test_api.py`, `tests/test_etl.py` and `tests/test_data_quality.py` rely on local processed CSV files and/or a running MySQL database; they are not included in the lightweight CI job yet.
+
+## Existing QA evidence
+
+The repository contains earlier QA artifacts, including HTML test reports, SQL validation output and source-to-target reconciliation documentation. The previous local test run recorded in the project history reported 22 passed tests and 7 API tests passed. These are historical local results, not a claim that every test currently runs on a clean CI runner. Re-run the tests in your environment before presenting fresh results.
+
+## Limitations and next improvements
+
+- The IBM HR dataset is a small, historical sample and may not represent a current workforce.
+- The model is a baseline, not a validated HR decision system. Assess fairness, calibration, drift and business impact before any real-world use.
+- The current ETL uses local CSV files and a single MySQL target; production ingestion would need scheduling, idempotency, schema migration and observability.
+- The API currently returns a limited employee sample and should gain authentication, pagination and role-based access before deployment.
+- The read-only SQL account script is a starting point; restrict host access and rotate credentials for deployment.
+- Add integration tests with disposable MySQL containers and test the complete Docker workflow in CI.
+- Add model explainability and subgroup/fairness evaluation before considering operational use.
+
+## License
+
+Add the repository's chosen open-source license before redistributing the code or dataset. The dataset itself may have separate terms from this source code.
