@@ -1,32 +1,28 @@
-
 import pandas as pd
 from sqlalchemy import text
 
 from backend.database.connection import engine
-
-# Locate the transformed dataset
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-
-CSV_FILE = (
-    BASE_DIR
-    / "data"
-    / "processed"
-    / "transformed_employee_attrition.csv"
-)
-
+CSV_FILE = BASE_DIR / "data" / "processed" / "transformed_employee_attrition.csv"
 TABLE_NAME = "employees"
 
 
 def load_employee_data():
     print("Reading transformed employee data...")
-
     df = pd.read_csv(CSV_FILE)
-
     print("CSV records:", len(df))
 
-    # Check whether the target table is empty.
+    # Create the target table from the transformed dataframe schema if needed.
+    # This keeps a clean MySQL database usable on the first pipeline run.
+    df.head(0).to_sql(
+        name=TABLE_NAME,
+        con=engine,
+        if_exists="append",
+        index=False,
+    )
+
     with engine.connect() as connection:
         existing_count = connection.execute(
             text("SELECT COUNT(*) FROM employees")
@@ -35,17 +31,17 @@ def load_employee_data():
     if existing_count > 0:
         raise RuntimeError(
             f"Target table already contains {existing_count} records. "
-            "Loading stopped to prevent duplicate insertion."
+            "Loading stopped to prevent duplicate insertion. Use an empty "
+            "dedicated target table for a fresh full-pipeline run."
         )
 
     print("Loading records into MySQL...")
-
     df.to_sql(
         name=TABLE_NAME,
         con=engine,
         if_exists="append",
         index=False,
-        chunksize=500
+        chunksize=500,
     )
 
     with engine.connect() as connection:
@@ -56,9 +52,8 @@ def load_employee_data():
     print("CSV records:", len(df))
     print("MySQL records:", loaded_count)
 
-    assert len(df) == loaded_count, (
-        "Source and target record counts do not match!"
-    )
+    if len(df) != loaded_count:
+        raise AssertionError("Source and target record counts do not match!")
 
     print("Data loading completed successfully!")
 
