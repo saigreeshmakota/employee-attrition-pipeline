@@ -10,3 +10,6 @@ plotly
 pytest
 pytest-html
 httpx
+pandera
+scikit-learn
+ruff
