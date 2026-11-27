@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: employee_attrition_db
+      MYSQL_USER: attrition_app
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?Set MYSQL_APP_PASSWORD in .env}
+    ports:
+      - "3307:3306"
+    volumes:
+      - attrition_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  pipeline:
+    build: .
+    profiles: ["pipeline"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: attrition_app
+      DB_PASSWORD: ${MYSQL_APP_PASSWORD}
+      DB_NAME: employee_attrition_db
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+
+volumes:
+  attrition_mysql:
